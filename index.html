@@ -1,0 +1,677 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>BETA UCB</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React (UMD, production) -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel (JSX in the browser for demo/dev) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Favicon（可选）-->
+    <link rel="icon" href="assets/logo.png" />
+    <style>
+      /* 额外的小样式（非 Tailwind 部分） */
+      .tilt {
+        transform-style: preserve-3d;
+        transition: transform .2s ease, box-shadow .2s ease;
+      }
+      .tilt:hover {
+        /* 主色阴影 violet */
+        box-shadow: 0 20px 60px rgba(139,92,246,.15);
+      }
+      .glass {
+        backdrop-filter: blur(8px);
+      }
+      /* 发光渐变描边容器 */
+      .glow-wrap {
+        position: relative;
+        border-radius: 1.5rem;
+        overflow: hidden;
+      }
+      .glow-wrap::before {
+        content: "";
+        position: absolute; inset: -2px;
+        /* 用 violet-500 (#8b5cf6) 半透明做描边 */
+        background: conic-gradient(from 180deg at 50% 50%, #8b5cf633, #60a5fa33, #8b5cf633, #8b5cf633);
+        filter: blur(12px);
+        z-index: 0;
+      }
+      .glow-wrap > * { position: relative; z-index: 1; }
+    </style>
+  </head>
+  <body class="bg-gray-950 text-gray-100">
+    <div id="root"></div>
+
+    <script type="text/babel">
+      const React = window.React, ReactDOM = window.ReactDOM;
+      const { useState, useMemo, useEffect, useRef } = React;
+
+      // ========= Config =========
+      const CLUB = {
+        name: "BETA | Berkeley Emerging Technology Association",
+        tagline: "Connecting students · founders · investors",
+        email: "join@beta-ucb.org",
+        location: "UC Berkeley · MLK Student Union",
+        logoUrl: "assets/logo.png",
+        socials: {
+          wechat: "https://example.com/wechat",
+          instagram: "https://instagram.com/betaucb",
+          github: "https://github.com/betaucb",
+          website: "https://beta-ucb.org",
+        },
+        intro: `BETA (Berkeley Emerging Tech Association) is an innovative student community at UC Berkeley focusing on technology and venture capital. It is dedicated to connecting students, entrepreneurs, and investors to foster an open and dynamic entrepreneurial ecosystem. Through initiatives such as venture conferences, guest speaker events, Demo Day, and its self-developed venture platform InnoSpark, BETA actively promotes resource sharing and interdisciplinary collaboration.`,
+      };
+
+      const SAMPLE_EVENTS = [
+        { id: 1, title: "Founder Interviews", date: "SEPTEMBER 2025",
+          brief: "Collaborating with a top Silicon Valley reality show production team to launch a series of entrepreneur interview videos.",
+          tags: ["Entrepreneurship", "SiliconValley", "Storytelling"], rsvp: "https://lu.ma/yourclub-kickoff" },
+        { id: 2, title: "AI Co-Learning", date: "SEPTEMBER 2025",
+          brief: "Hosting recurring online lectures led by engineers from Microsoft, Google, and Amazon, as well as scholars from Berkeley, Stanford, and Tsinghua. Topics cover cutting-edge areas such as LLMs, AI investment, and Multi-Agent systems.",
+          tags: ["AI", "KnowledgeSharing", "TechLeaders"], rsvp: "https://lu.ma/yourclub-hacknight1" },
+        { id: 3, title: "AI Hackathon", date: "OCTOBER 2025",
+          brief: "A large-scale Web3 hackathon, currently in partnership discussions with Binance and already backed by $50,000 in sponsorship. The event will bring together developers and entrepreneurs to explore next-generation applications.",
+          tags: ["Innovation", "Hackathon"], rsvp: "https://lu.ma/yourclub-founder-talk" },
+        {  id: 4, title: "AI Investment Summit", date: "NOVEMBER 2025",
+          brief: "This November, Berkeley will host a high-profile AI Investment Summit, inviting top entrepreneurs, investors, and academics to discuss AGI technologies and emerging startup opportunities.",
+          tags: ["AI-Investment", "AGI", "FutureTech"], rsvp: "https://lu.ma/yourclub-founder-talk" },
+      ];
+
+      const LEADS = [
+        { name: "Secretariat", role: "Handles finance, campus partnerships, and research reports.", avatar: "https://i.pravatar.cc/120?img=32" },
+        { name: "Investment", role: "Organizes summits, Demo Day, and hackathons; connects with VCs and founders.", avatar: "https://i.pravatar.cc/120?img=15" },
+        { name: "Public Relations (PR)", role: "Runs WeChat, Xiaohongshu, and Instagram; leads content and branding.", avatar: "https://i.pravatar.cc/120?img=5" },
+        { name: "Technology", role: "Maintains the venture platform and supports technical needs.", avatar: "https://i.pravatar.cc/120?img=49" },
+        { name: "External Relations", role: "Builds partnerships, secures sponsorships, and co-hosts events.",  avatar: "https://i.pravatar.cc/120?img=49" },
+      ];
+
+      // ========= Utilities =========
+      const Section = ({ id, title, children, desc }) => (
+        <section id={id} className="scroll-mt-24 py-16 md:py-24 reveal">
+          <div className="mx-auto max-w-6xl px-4">
+            <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-white">{title}</h2>
+            {desc && <p className="mt-2 text-sm md:text-base text-gray-400">{desc}</p>}
+            <div className="mt-8">{children}</div>
+          </div>
+        </section>
+      );
+
+      function BetaLogo({ className = "h-8 w-8" }) {
+        return (
+          <svg viewBox="0 0 64 64" className={className} aria-label="BETA UCB Logo" aria-hidden="true">
+            <rect x="2" y="2" width="60" height="60" rx="14" fill="#0b0f1a" />
+            <path d="M20 16h16c6 0 10 4 10 9 0 4-2 7-6 8 4 1 7 4 7 9 0 6-5 10-12 10H20V16zm12 14c3 0 5-2 5-5s-2-5-5-5h-7v10h7zm1 20c4 0 6-2 6-6s-2-6-6-6h-8v12h8z" fill="white"/>
+            {/* 点缀色 violet */}
+            <path d="M42 10 L34 28 H42 L30 54 L36 34 H28 L42 10" fill="#8b5cf6" />
+          </svg>
+        );
+      }
+
+      // 粒子背景（Canvas）
+      function ParticleBG() {
+        const ref = useRef(null);
+        useEffect(() => {
+          const canvas = ref.current; if (!canvas) return;
+          const ctx = canvas.getContext('2d');
+          let w, h, dpr = window.devicePixelRatio || 1;
+          const particles = Array.from({length: 70}).map(() => ({
+            x: Math.random(), y: Math.random(),
+            vx: (Math.random() - 0.5) * 0.0006,
+            vy: (Math.random() - 0.5) * 0.0006
+          }));
+          function resize() {
+            w = canvas.clientWidth; h = canvas.clientHeight;
+            canvas.width = w * dpr; canvas.height = h * dpr;
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          }
+          function loop() {
+            ctx.clearRect(0,0,w,h);
+            // draw links
+            // for (let i=0;i<particles.length;i++){
+            //   const p = particles[i];
+            //   for (let j=i+1;j<particles.length;j++){
+            //     const q = particles[j];
+            //     const dx=(p.x-q.x)*w, dy=(p.y-q.y)*h;
+            //     const dist = Math.hypot(dx,dy);
+            //     if (dist < 120){
+            //       const a = 1 - dist/120;
+            //       // 连接线 violet
+            //       ctx.strokeStyle = `rgba(139,92,246,${0.05*a})`;
+            //       ctx.beginPath(); ctx.moveTo(p.x*w,p.y*h); ctx.lineTo(q.x*w,q.y*h); ctx.stroke();
+            //     }
+            //   }
+            // }
+            // draw points
+            for (const p of particles){
+              p.x += p.vx; p.y += p.vy;
+              if (p.x<0||p.x>1) p.vx*=-1;
+              if (p.y<0||p.y>1) p.vy*=-1;
+              ctx.fillStyle = 'rgba(156, 163, 175, 0.35)';
+              ctx.beginPath(); ctx.arc(p.x*w, p.y*h, 0.4, 0, Math.PI*2); ctx.fill();
+            }
+            raf = requestAnimationFrame(loop);
+          }
+          resize(); let raf = requestAnimationFrame(loop);
+          const onResize = () => resize();
+          window.addEventListener('resize', onResize);
+          return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', onResize); };
+        }, []);
+        return <canvas ref={ref} className="absolute inset-0 -z-10 w-full h-full"></canvas>;
+      }
+
+      // 3D Tilt（纯 JS）
+      function useTilt() {
+        return (el) => {
+          if (!el) return;
+          const onMove = (e) => {
+            const r = el.getBoundingClientRect();
+            const px = (e.clientX - r.left) / r.width - 0.5;
+            const py = (e.clientY - r.top) / r.height - 0.5;
+            el.style.transform = `rotateX(${(-py*6).toFixed(2)}deg) rotateY(${(px*8).toFixed(2)}deg) translateZ(0)`;
+          };
+          const reset = () => { el.style.transform = ""; };
+          el.addEventListener('mousemove', onMove);
+          el.addEventListener('mouseleave', reset);
+        };
+      }
+
+      // 滚动显现
+      function useReveal() {
+        useEffect(() => {
+          const els = document.querySelectorAll('.reveal, .reveal-child > *');
+          els.forEach(el => {
+            el.style.opacity = 0;
+            el.style.transform = 'translateY(14px)';
+            el.style.transition = 'opacity .6s ease, transform .6s ease';
+          });
+          const io = new IntersectionObserver((entries) => {
+            entries.forEach(e => {
+              if (e.isIntersecting) {
+                e.target.style.opacity = 1;
+                e.target.style.transform = 'translateY(0)';
+                io.unobserve(e.target);
+              }
+            });
+          }, { threshold: 0.12 });
+          els.forEach(el => io.observe(el));
+          return () => io.disconnect();
+        }, []);
+      }
+
+      // 计数器
+      function Counter({ to = 100, duration = 1200, className = "" }) {
+        const ref = useRef(null);
+        useEffect(() => {
+          const el = ref.current; if (!el) return;
+          const start = performance.now();
+          function tick(t) {
+            const p = Math.min((t - start)/duration, 1);
+            el.textContent = Math.round(p * to).toLocaleString();
+            if (p < 1) requestAnimationFrame(tick);
+          }
+          requestAnimationFrame(tick);
+        }, [to, duration]);
+        return <span ref={ref} className={className}>0</span>;
+      }
+
+      // Confetti（极简）
+      function confettiBurst(x=window.innerWidth/2, y=window.innerHeight/2) {
+        const c = document.createElement('canvas');
+        c.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:9999';
+        document.body.appendChild(c);
+        const ctx = c.getContext('2d');
+        const dpr = window.devicePixelRatio || 1;
+        c.width = innerWidth * dpr; c.height = innerHeight * dpr;
+        ctx.scale(dpr, dpr);
+        const parts = Array.from({length: 120}).map(()=>({
+          x, y, vx:(Math.random()-0.5)*6, vy:(Math.random()*-6-4),
+          g: 0.15 + Math.random()*0.2, s: 4+Math.random()*4,
+          a: 1, col: `hsl(${Math.random()*360},90%,60%)`, r: Math.random()*Math.PI
+        }));
+        let frame=0;
+        function loop() {
+          ctx.clearRect(0,0,innerWidth,innerHeight);
+          parts.forEach(p=>{
+            p.vy += p.g; p.x += p.vx; p.y += p.vy; p.r += 0.1; p.a -= 0.01;
+            ctx.save(); ctx.globalAlpha = Math.max(p.a,0);
+            ctx.translate(p.x, p.y); ctx.rotate(p.r);
+            ctx.fillStyle = p.col; ctx.fillRect(-p.s/2, -p.s/2, p.s, p.s);
+            ctx.restore();
+          });
+          frame++;
+          if (frame < 180) requestAnimationFrame(loop); else c.remove();
+        }
+        loop();
+      }
+
+      // ========= Components =========
+      function NavBar({ nav, onJump }) {
+        const [open, setOpen] = useState(false);
+        return (
+          <div className="sticky top-0 z-50 w-full border-b border-gray-800 bg-gray-950/80 backdrop-blur">
+            <div className="mx-auto max-w-6xl px-4 h-16 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                {CLUB.logoUrl ? (
+                  <img src={CLUB.logoUrl} alt="logo" className="h-10 w-10 rounded-xl object-contain" />
+                ) : (<BetaLogo className="h-10 w-10" />)}
+                <button onClick={() => onJump("home")} className="text-sm font-semibold text-white hover:text-violet-400">
+                  {CLUB.name}
+                </button>
+              </div>
+              <nav className="hidden md:flex items-center gap-1">
+                {nav.map((n) => (
+                  <button key={n.id} onClick={() => onJump(n.id)} className="text-sm rounded-xl px-3 py-2 text-gray-300 hover:bg-gray-800 hover:text-white">
+                    {n.label}
+                  </button>
+                ))}
+                <a href="#join" onClick={(e)=>{e.preventDefault(); onJump("join");}}
+                   className="ml-2 inline-flex items-center rounded-xl bg-violet-500 px-3 py-2 text-sm text-gray-900 font-semibold hover:bg-violet-400">
+                  Join
+                </a>
+              </nav>
+              <button onClick={() => setOpen(s=>!s)} className="md:hidden rounded-xl border border-gray-700 px-3 py-2 text-sm text-gray-200">
+                Menu
+              </button>
+            </div>
+            {open && (
+              <div className="md:hidden border-t border-gray-800 bg-gray-900">
+                <div className="mx-auto max-w-6xl px-4 py-2 flex flex-wrap items-center gap-2">
+                  {nav.map((n) => (
+                    <button key={n.id} onClick={() => { onJump(n.id); setOpen(false); }}
+                            className="text-sm rounded-xl px-3 py-2 text-gray-200 hover:bg-gray-800">{n.label}</button>
+                  ))}
+                  <a href="#join" onClick={(e)=>{e.preventDefault(); onJump("join"); setOpen(false);}}
+                     className="inline-flex items-center rounded-xl bg-violet-500 px-3 py-2 text-sm text-gray-900 font-semibold hover:bg-violet-400">
+                    Join
+                  </a>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      }
+
+      function HeroCard() {
+        return (
+          <div className="relative glow-wrap reveal">
+            <div className="rounded-3xl border border-gray-800 bg-gray-900 shadow-sm p-6">
+              <div className="flex items-center gap-3">
+                {/* 小方块 violet */}
+                <div className="h-10 w-10 rounded-xl bg-violet-500/80" />
+                <div>
+                  <div className="text-sm font-semibold text-white">This Week</div>
+                  <div className="text-xs text-gray-400">Highlights</div>
+                </div>
+              </div>
+              <ul className="mt-4 space-y-3 text-sm text-gray-300">
+                <li>• Kickoff RSVP open (see Events)</li>
+                <li>• Submit your project idea & match a team</li>
+                <li>• Join the mailing list for weekly updates</li>
+              </ul>
+              <div className="mt-4 rounded-2xl bg-gray-800 p-4 text-xs text-gray-300">
+                Tip: Bookmark this page. All updates follow the website & newsletter.
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      function StatsBar() {
+        return (
+          <div className="mt-8 grid grid-cols-3 gap-4 reveal-child">
+            <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4 text-center">
+              <div className="text-2xl font-extrabold"><Counter to={300} /></div>
+              <div className="text-xs text-gray-400 mt-1">Members</div>
+            </div>
+            <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4 text-center">
+              <div className="text-2xl font-extrabold"><Counter to={45} /></div>
+              <div className="text-xs text-gray-400 mt-1">Projects</div>
+            </div>
+            <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4 text-center">
+              <div className="text-2xl font-extrabold"><Counter to={120} /></div>
+              <div className="text-xs text-gray-400 mt-1">Events</div>
+            </div>
+          </div>
+        );
+      }
+
+      function JoinForm() {
+        const [form, setForm] = useState({ name: "", email: "", role: "Member", track: "Data/AI", note: "" });
+        const [done, setDone] = useState(false);
+        const handle = (k, v) => setForm((s) => ({ ...s, [k]: v }));
+        /* violet 聚焦样式 */
+        const inputCls = "mt-1 w-full rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500/50";
+        const labelCls = "text-sm text-gray-300";
+
+        const submit = (e) => {
+          e.preventDefault();
+          setDone(true);
+          confettiBurst(window.innerWidth*0.25, window.innerHeight*0.25);
+          confettiBurst(window.innerWidth*0.75, window.innerHeight*0.25);
+        };
+
+        if (done) {
+          return (
+            <div className="rounded-2xl border border-gray-800 bg-gray-900 p-6 shadow-sm reveal">
+              <div className="text-lg font-semibold text-white">Submitted ✅</div>
+              <p className="mt-2 text-sm text-gray-300">We’ve recorded your info. Expect an email in ~3 business days.</p>
+              <div className="mt-4 text-sm text-gray-300">
+                In a rush? Email us directly at{" "}
+                <a className="underline text-violet-400 hover:text-violet-300" href={`mailto:${CLUB.email}?subject=Join ${CLUB.name}`}>{CLUB.email}</a>
+              </div>
+            </div>
+          );
+        }
+
+        return (
+          <form onSubmit={submit} className="grid gap-4 rounded-2xl border border-gray-800 bg-gray-900 p-6 shadow-sm md:grid-cols-2 reveal">
+            <div>
+              <label className={labelCls}>Name</label>
+              <input required value={form.name} onChange={(e)=>handle("name", e.target.value)} className={inputCls} placeholder="Your name" />
+            </div>
+            <div>
+              <label className={labelCls}>Email</label>
+              <input required type="email" value={form.email} onChange={(e)=>handle("email", e.target.value)} className={inputCls} placeholder="name@berkeley.edu" />
+            </div>
+            <div>
+              <label className={labelCls}>Role</label>
+              <select value={form.role} onChange={(e)=>handle("role", e.target.value)} className={inputCls}>
+                <option>Member</option><option>Volunteer</option><option>Mentor</option><option>Partner</option>
+              </select>
+            </div>
+            <div>
+              <label className={labelCls}>Track</label>
+              <select value={form.track} onChange={(e)=>handle("track", e.target.value)} className={inputCls}>
+                <option>Data/AI</option><option>Product/Ops</option><option>Design/UI</option><option>Blockchain/Web3</option>
+              </select>
+            </div>
+            <div className="md:col-span-2">
+              <label className={labelCls}>Notes (optional)</label>
+              <textarea value={form.note} onChange={(e)=>handle("note", e.target.value)} className={inputCls} rows={4} placeholder="Briefly share your background and interests" />
+            </div>
+            <div className="md:col-span-2 flex items-center justify-between">
+              <button type="submit" className="rounded-xl bg-violet-500 px-4 py-2.5 text-gray-900 font-semibold hover:bg-violet-400">Submit</button>
+              <a className="text-sm underline text-violet-400 hover:text-violet-300" href={`mailto:${CLUB.email}?subject=Join ${CLUB.name}`}>Or email us directly</a>
+            </div>
+          </form>
+        );
+      }
+
+      function FAQ({ q, a }) {
+        const [open, setOpen] = useState(false);
+        return (
+          <div className="rounded-2xl border border-gray-800 bg-gray-900 p-5 shadow-sm reveal">
+            <button onClick={()=>setOpen(o=>!o)} className="w-full text-left flex items-start justify-between gap-4">
+              <span className="font-medium text-white">{q}</span>
+              <span className="text-gray-400 text-xl leading-none">{open ? "−" : "+"}</span>
+            </button>
+            {open && <p className="mt-3 text-sm text-gray-300">{a}</p>}
+          </div>
+        );
+      }
+
+      function Footer() {
+        return (
+          <footer className="border-t border-gray-800 bg-gray-950 reveal">
+            <div className="mx-auto max-w-6xl px-4 py-10 grid md:grid-cols-3 gap-8">
+              <div>
+                <div className="text-lg font-semibold text-white">{CLUB.name}</div>
+                <p className="mt-2 text-sm text-gray-400">{CLUB.tagline}</p>
+              </div>
+              <div>
+                <div className="text-sm font-semibold text-white">Navigate</div>
+                <ul className="mt-2 text-sm text-gray-400 space-y-1">
+                  {[
+                    ["Home", "home"], ["About", "about"], ["Events", "events"],
+                    ["Projects", "projects"], ["Join", "join"], ["FAQ", "faq"], ["Contact", "contact"],
+                  ].map(([label, id]) => (
+                    <li key={id}><a className="hover:text-violet-400" href={`#${id}`}>{label}</a></li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <div className="text-sm font-semibold text-white">Subscribe</div>
+                <p className="mt-2 text-sm text-gray-400">
+                  Send a blank email to <a className="underline text-violet-400 hover:text-violet-300" href={`mailto:${CLUB.email}?subject=Subscribe`}>{CLUB.email}</a> to receive our weekly digest.
+                </p>
+              </div>
+            </div>
+            <div className="border-t border-gray-800">
+              <div className="mx-auto max-w-6xl px-4 h-12 text-xs text-gray-500 flex items-center">© {new Date().getFullYear()} {CLUB.name}. All rights reserved.</div>
+            </div>
+          </footer>
+        );
+      }
+
+      // Hero 背景 FX（含粒子）
+      function HeroFX() {
+        return (
+          <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+            {/* 渐变末端 violet */}
+            <div className="absolute inset-0 -z-10 bg-gradient-to-br from-slate-950 via-gray-950 to-violet-950/30"></div>
+            <div className="absolute -top-16 -left-20 h-72 w-72 rounded-full bg-indigo-500/20 blur-3xl"></div>
+            <div className="absolute top-10 -right-24 h-80 w-80 rounded-full bg-violet-400/10 blur-3xl"></div>
+            <div className="absolute -bottom-24 left-1/3 h-80 w-80 rounded-full bg-violet-400/10 blur-3xl"></div>
+            <ParticleBG />
+          </div>
+        );
+      }
+
+      // ========= App =========
+      function ClubSite() {
+        useReveal();
+
+        const [events] = useState(SAMPLE_EVENTS);
+        const nav = useMemo(() => [
+          { id: "home", label: "Home" },
+          { id: "about", label: "About" },
+          { id: "events", label: "Events" },
+          { id: "projects", label: "Projects" },
+          { id: "join", label: "Join" },
+          { id: "faq", label: "FAQ" },
+          { id: "contact", label: "Contact" },
+        ], []);
+
+        const scrollTo = (id) => {
+          document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+        };
+
+        const tiltRef = useRef(null);
+        const attachTilt = useTilt();
+        useEffect(() => { if (tiltRef.current) attachTilt(tiltRef.current); }, [tiltRef]);
+
+        return (
+          <div className="min-h-screen">
+            <NavBar nav={nav} onJump={scrollTo} />
+            <header
+              id="home"
+              className="relative overflow-hidden flex flex-col justify-center items-center text-center min-h-[calc(100vh-64px)]"
+            >
+              <HeroFX />
+              <div className="mx-auto max-w-8xl px-4">
+                {CLUB.logoUrl && (
+                  <img
+                    src={CLUB.logoUrl}
+                    alt="logo"
+                    className="h-24 w-24 mb-5 object-contain drop-shadow-[0_8px_24px_rgba(139,92,246,0.25)]"
+                  />
+                )}
+                <span className="inline-flex items-center gap-2 rounded-full border border-gray-800 px-3 py-1 text-xs md:text-sm bg-gray-900/60 glass mb-4">
+                  <span className="h-2 w-2 rounded-full bg-violet-400" /> Recruiting this semester
+                </span>
+                <h1 className="text-3xl md:text-5xl font-extrabold leading-tight text-white mb-3">
+                  {CLUB.name}
+                </h1>
+                <p className="text-gray-300 md:text-lg mb-6">{CLUB.tagline}</p>
+                <div className="flex flex-wrap justify-center gap-3">
+                  <a
+                    href="#join"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      scrollTo("join");
+                    }}
+                    className="inline-flex items-center justify-center rounded-2xl border border-gray-700 bg-gray-900 px-4 py-2.5 text-gray-100 hover:bg-gray-800"
+                  >
+                    Join Now
+                  </a>
+                  <a
+                    href={events[0]?.rsvp || "#events"}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center justify-center rounded-2xl border border-gray-700 bg-gray-900 px-4 py-2.5 text-gray-100 hover:bg-gray-800"
+                  >
+                    View Next Event
+                  </a>
+                </div>
+              </div>
+            </header>
+
+
+            <Section id="about" title="About Us" desc={CLUB.intro}>
+              <div className="flex flex-col gap-8 reveal-child">
+                <div className="rounded-2xl border border-gray-800 bg-gray-900 p-6 shadow-sm">   
+                  <h3 className="font-semibold text-white">What We Do</h3>
+                  <ul className="mt-3 space-y-2 text-sm leading-6 text-gray-300 list-disc pl-5">
+                    <li>Venture Conferences & Guest Talks</li>
+                    <li>Demo Day & Startup Showcases</li>
+                    <li>InnoSpark Platform </li>
+                    <li>Interdisciplinary Collaboration</li>
+                  </ul>
+                </div>
+                <div className="rounded-2xl border border-gray-800 bg-gray-900 p-6 shadow-sm">
+                  <h3 className="font-semibold text-white">Who We Are</h3>
+                  <p className="mt-3 text-sm leading-6 text-gray-300">Members from CS / Data / Stats / IEOR / Business and more — all backgrounds welcome.</p>
+                  <div className="mt-5 grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {LEADS.map((p) => (
+                      <div key={p.name} className="rounded-xl border border-gray-800 bg-gray-900 p-4 text-center">
+                        <img src={p.avatar} alt={p.name} className="mx-auto h-16 w-16 rounded-full object-cover ring-1 ring-gray-800" />
+                        <div className="mt-2 text-sm font-semibold text-white">{p.name}</div>
+                        <div className="text-xs text-gray-400">{p.role}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </Section>
+
+            <Section id="events" title="Events" desc="Flagship Events 2025 Fall">
+              <div className="grid md:grid-cols-3 gap-6">
+                {events.map((ev) => (
+                  <div key={ev.id} className="rounded-2xl border border-gray-800 bg-gray-900 p-5 shadow-sm flex flex-col reveal tilt">
+                    <div className="text-xs text-gray-400">{ev.date} · {ev.where}</div>
+                    <h3 className="mt-2 font-semibold text-lg text-white">{ev.title}</h3>
+                    <p className="mt-2 text-sm text-gray-300 flex-1">{ev.brief}</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {ev.tags.map((t) => (
+                        <span key={t} className="text-[11px] rounded-full border border-gray-700 px-2 py-1 text-gray-300 bg-gray-800/60">{t}</span>
+                      ))}
+                    </div>
+                    <a
+                      href={ev.rsvp}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-4 inline-flex items-center justify-center rounded-xl border border-blue-950/50 bg-blue-950 px-3 py-2 text-sm text-gray-200 font-semibold hover:bg-blue-900"
+                    >
+                      RSVP
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </Section>
+
+            <Section id="past-events" title="Past Events" desc="Highlights from our previous activities.">
+  <div className="grid md:grid-cols-2 gap-6 reveal-child">
+    {[
+      { 
+        title: "2024 Demo Day", 
+        desc: "Brought together 16 cutting-edge projects in AI, medical devices, and smart mobility. Over 30 top investment institutions—including Silicon Valley Bank, CICC Silicon Valley Fund, and Baidu Ventures—participated, providing projects with resources and funding opportunities. Several student participants secured internships as a direct result of the event.",
+        images: ["/images/2024demo1.jpg", "/images/2024demo2.jpg"]
+      },
+      { 
+        title: "2025 BTT Pitch Competition", 
+        desc: "Co-hosted with USC, UCLA, and Stanford, this competition was jointly organized with leading Bay Area investment firms such as Uphonest Capital, Upscale X, and Beta University. Thirty outstanding student projects from universities across the U.S. competed, with seven selected as finalists.",
+        images: ["/images/2025btt1.jpg", "/images/2025btt2.jpg"]
+      },
+      { 
+        title: "Venture Summits", 
+        desc: "Key summits include Plug & Play Summit, GenAI Summit 2024, and HYSTA 2024, fostering dialogue on emerging technologies and entrepreneurship.",
+        images: ["/images/vs1.jpg", "/images/vs2.jpg"]
+      },
+      { 
+        title: "Founder Talks", 
+        desc: "Through interviews, roundtables, and site visits, we share the stories of entrepreneurs and investors. This initiative provides students with a gateway to connect with the venture ecosystem.",
+        images: ["/images/ft1.jpg", "/images/ft2.jpg"]
+      },
+    ].map((event) => (
+      <div key={event.title} className="rounded-2xl border border-gray-800 bg-gray-900 p-6 shadow-sm">
+        <h3 className="font-semibold text-white">{event.title}</h3>
+        <p className="mt-2 text-sm text-gray-300">{event.desc}</p>
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          {event.images.map((src, idx) => (
+            <img 
+              key={idx} 
+              src={src} 
+              alt={`${event.title} photo ${idx+1}`} 
+              className="rounded-lg object-cover w-full h-32 border border-gray-800"
+            />
+          ))}
+        </div>
+      </div>
+    ))}
+  </div>
+</Section>
+
+            <Section id="join" title="Join Us" desc="Fill the form or email us. Volunteers and partners are welcome.">
+              <JoinForm />
+            </Section>
+
+            <Section id="faq" title="FAQ">
+              <div className="grid md:grid-cols-2 gap-6 reveal-child">
+                <FAQ q="Do I need a technical background?" a="No. We support multiple roles including product, design, and operations." />
+                <FAQ q="Are events free?" a="Regular events are free. Some workshops may charge a small venue/material fee (we'll announce in advance)." />
+                <FAQ q="How do you evaluate members?" a="Mainly by project delivery, with attendance and contribution considered for leadership opportunities." />
+                <FAQ q="How to become a mentor or sponsor?" a={`Email ${CLUB.email} with the subject “Mentor/Sponsor + Your Name/Org”.`} />
+              </div>
+            </Section>
+
+            <Section id="contact" title="Contact & Socials">
+              <div className="rounded-2xl border border-gray-800 bg-gray-900 p-6 shadow-sm reveal">
+                <div className="grid md:grid-cols-2 gap-6 items-center">
+                  <div>
+                    <p className="text-sm text-gray-300">Email: <a className="underline text-violet-400 hover:text-violet-300" href={`mailto:${CLUB.email}`}>{CLUB.email}</a></p>
+                    <p className="text-sm text-gray-300 mt-1">Location: {CLUB.location}</p>
+                    <div className="mt-3 flex flex-wrap gap-3 text-sm">
+                      <a className="rounded-full border border-gray-700 px-3 py-1 hover:bg-gray-800 text-gray-200" href={CLUB.socials.wechat}>WeChat</a>
+                      <a className="rounded-full border border-gray-700 px-3 py-1 hover:bg-gray-800 text-gray-200" href={CLUB.socials.instagram}>Instagram</a>
+                      <a className="rounded-full border border-gray-700 px-3 py-1 hover:bg-gray-800 text-gray-200" href={CLUB.socials.github}>GitHub</a>
+                      <a className="rounded-full border border-gray-700 px-3 py-1 hover:bg-gray-800 text-gray-200" href={CLUB.socials.website}>Website</a>
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-gray-800 p-4 bg-gray-900">
+                    <p className="text-sm text-gray-300">Quick email template:</p>
+                    <pre className="mt-2 whitespace-pre-wrap text-xs md:text-sm text-gray-300">{`Subject: Join ${CLUB.name} - Name / Year / Track
+
+Hi, I'm XX (year/major) and would like to join ${CLUB.name}.
+My track of interest: (e.g., Data/AI, Product, Design).
+Short background: (one sentence).
+I hope to join these activities/projects: ...
+Contact: ...
+Thanks!`}</pre>
+                  </div>
+                </div>
+              </div>
+            </Section>
+
+            <Footer />
+          </div>
+        );
+      }
+
+      ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(ClubSite));
+    </script>
+  </body>
+</html>
