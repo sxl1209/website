@@ -12,7 +12,7 @@
     <!-- Babel (JSX in the browser for demo/dev) -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <!-- Favicon（可选）-->
-    <link rel="icon" href="assets/logo.png" />
+    <link rel="icon" href="assets/logo.jpg" />
     <style>
       /* 额外的小样式（非 Tailwind 部分） */
       .tilt {
@@ -56,7 +56,7 @@
         tagline: "Connecting students · founders · investors",
         email: "join@beta-ucb.org",
         location: "UC Berkeley · MLK Student Union",
-        logoUrl: "assets/logo.png",
+        logoUrl: "assets/logo.jpg",
         socials: {
           wechat: "https://example.com/wechat",
           instagram: "https://instagram.com/betaucb",
@@ -82,11 +82,11 @@
       ];
 
       const LEADS = [
-        { name: "Secretariat", role: "Handles finance, campus partnerships, and research reports.", avatar: "https://i.pravatar.cc/120?img=32" },
-        { name: "Investment", role: "Organizes summits, Demo Day, and hackathons; connects with VCs and founders.", avatar: "https://i.pravatar.cc/120?img=15" },
-        { name: "Public Relations (PR)", role: "Runs WeChat, Xiaohongshu, and Instagram; leads content and branding.", avatar: "https://i.pravatar.cc/120?img=5" },
-        { name: "Technology", role: "Maintains the venture platform and supports technical needs.", avatar: "https://i.pravatar.cc/120?img=49" },
-        { name: "External Relations", role: "Builds partnerships, secures sponsorships, and co-hosts events.",  avatar: "https://i.pravatar.cc/120?img=49" },
+        { name: "Secretariat", role: "Handles finance, campus partnerships, and research reports.", avatar: "./assets/sec.jpg" },
+        { name: "Investment", role: "Organizes summits, Demo Day, and hackathons; connects with VCs and founders.", avatar: "./assets/invest.jpg" },
+        { name: "Public Relations (PR)", role: "Runs WeChat, Xiaohongshu, and Instagram; leads content and branding.", avatar: "./assets/pr.png" },
+        { name: "Technology", role: "Maintains the venture platform and supports technical needs.", avatar: "./assets/tech.png" },
+        { name: "External Relations", role: "Builds partnerships, secures sponsorships, and co-hosts events.",  avatar: "./assets/er.png" },
       ];
 
       // ========= Utilities =========
@@ -269,7 +269,7 @@
                   </button>
                 ))}
                 <a href="#join" onClick={(e)=>{e.preventDefault(); onJump("join");}}
-                   className="ml-2 inline-flex items-center rounded-xl bg-violet-500 px-3 py-2 text-sm text-gray-900 font-semibold hover:bg-violet-400">
+                   className="ml-2 inline-flex items-center rounded-xl bg-blue-900 px-3 py-2 text-sm text-gray-300 font-semibold hover:bg-blue-800">
                   Join
                 </a>
               </nav>
@@ -285,7 +285,7 @@
                             className="text-sm rounded-xl px-3 py-2 text-gray-200 hover:bg-gray-800">{n.label}</button>
                   ))}
                   <a href="#join" onClick={(e)=>{e.preventDefault(); onJump("join"); setOpen(false);}}
-                     className="inline-flex items-center rounded-xl bg-violet-500 px-3 py-2 text-sm text-gray-900 font-semibold hover:bg-violet-400">
+                     className="inline-flex items-center rounded-xl bg-blue-900 px-3 py-2 text-sm text-gray-100 font-semibold hover:bg-blue-800">
                     Join
                   </a>
                 </div>
@@ -394,8 +394,8 @@
               <textarea value={form.note} onChange={(e)=>handle("note", e.target.value)} className={inputCls} rows={4} placeholder="Briefly share your background and interests" />
             </div>
             <div className="md:col-span-2 flex items-center justify-between">
-              <button type="submit" className="rounded-xl bg-violet-500 px-4 py-2.5 text-gray-900 font-semibold hover:bg-violet-400">Submit</button>
-              <a className="text-sm underline text-violet-400 hover:text-violet-300" href={`mailto:${CLUB.email}?subject=Join ${CLUB.name}`}>Or email us directly</a>
+              <button type="submit" className="rounded-xl bg-blue-900 px-4 py-2.5 text-gray-100 font-semibold hover:bg-blue-800">Submit</button>
+              <a className="text-sm underline text-blue-500 hover:text-blue-400" href={`mailto:${CLUB.email}?subject=Join ${CLUB.name}`}>Or email us directly</a>
             </div>
           </form>
         );
@@ -436,7 +436,7 @@
               <div>
                 <div className="text-sm font-semibold text-white">Subscribe</div>
                 <p className="mt-2 text-sm text-gray-400">
-                  Send a blank email to <a className="underline text-violet-400 hover:text-violet-300" href={`mailto:${CLUB.email}?subject=Subscribe`}>{CLUB.email}</a> to receive our weekly digest.
+                  Send a blank email to <a className="underline text-blue-500 hover:text-blue-400" href={`mailto:${CLUB.email}?subject=Subscribe`}>{CLUB.email}</a> to receive our weekly digest.
                 </p>
               </div>
             </div>
@@ -574,7 +574,7 @@
                       href={ev.rsvp}
                       target="_blank"
                       rel="noreferrer"
-                      className="mt-4 inline-flex items-center justify-center rounded-xl border border-blue-950/50 bg-blue-950 px-3 py-2 text-sm text-gray-200 font-semibold hover:bg-blue-900"
+                      className="mt-4 inline-flex items-center justify-center rounded-xl border border-blue-950/50 bg-blue-900 px-3 py-2 text-sm text-gray-100 font-semibold hover:bg-blue-800"
                     >
                       RSVP
                     </a>
@@ -584,46 +584,46 @@
             </Section>
 
             <Section id="past-events" title="Past Events" desc="Highlights from our previous activities.">
-  <div className="grid md:grid-cols-2 gap-6 reveal-child">
-    {[
-      { 
-        title: "2024 Demo Day", 
-        desc: "Brought together 16 cutting-edge projects in AI, medical devices, and smart mobility. Over 30 top investment institutions—including Silicon Valley Bank, CICC Silicon Valley Fund, and Baidu Ventures—participated, providing projects with resources and funding opportunities. Several student participants secured internships as a direct result of the event.",
-        images: ["/images/2024demo1.jpg", "/images/2024demo2.jpg"]
-      },
-      { 
-        title: "2025 BTT Pitch Competition", 
-        desc: "Co-hosted with USC, UCLA, and Stanford, this competition was jointly organized with leading Bay Area investment firms such as Uphonest Capital, Upscale X, and Beta University. Thirty outstanding student projects from universities across the U.S. competed, with seven selected as finalists.",
-        images: ["/images/2025btt1.jpg", "/images/2025btt2.jpg"]
-      },
-      { 
-        title: "Venture Summits", 
-        desc: "Key summits include Plug & Play Summit, GenAI Summit 2024, and HYSTA 2024, fostering dialogue on emerging technologies and entrepreneurship.",
-        images: ["/images/vs1.jpg", "/images/vs2.jpg"]
-      },
-      { 
-        title: "Founder Talks", 
-        desc: "Through interviews, roundtables, and site visits, we share the stories of entrepreneurs and investors. This initiative provides students with a gateway to connect with the venture ecosystem.",
-        images: ["/images/ft1.jpg", "/images/ft2.jpg"]
-      },
-    ].map((event) => (
-      <div key={event.title} className="rounded-2xl border border-gray-800 bg-gray-900 p-6 shadow-sm">
-        <h3 className="font-semibold text-white">{event.title}</h3>
-        <p className="mt-2 text-sm text-gray-300">{event.desc}</p>
-        <div className="mt-4 grid grid-cols-2 gap-3">
-          {event.images.map((src, idx) => (
-            <img 
-              key={idx} 
-              src={src} 
-              alt={`${event.title} photo ${idx+1}`} 
-              className="rounded-lg object-cover w-full h-32 border border-gray-800"
-            />
-          ))}
-        </div>
-      </div>
-    ))}
-  </div>
-</Section>
+              <div className="grid md:grid-cols-2 gap-6 reveal-child">
+                {[
+                  { 
+                    title: "2024 Demo Day", 
+                    desc: "Brought together 16 cutting-edge projects in AI, medical devices, and smart mobility. Over 30 top investment institutions—including Silicon Valley Bank, CICC Silicon Valley Fund, and Baidu Ventures—participated, providing projects with resources and funding opportunities. Several student participants secured internships as a direct result of the event.",
+                    images: ["./assets/demoday1.jpg", "./assets/demoday2.png"]
+                  },
+                  { 
+                    title: "2025 BTT Pitch Competition", 
+                    desc: "Co-hosted with USC, UCLA, and Stanford, this competition was jointly organized with leading Bay Area investment firms such as Uphonest Capital, Upscale X, and Beta University. Thirty outstanding student projects from universities across the U.S. competed, with seven selected as finalists.",
+                    images: ["./assets/pitch1.jpeg", "./assets/pitch2.JPG"]
+                  },
+                  { 
+                    title: "Venture Summits", 
+                    desc: "Key summits include Plug & Play Summit, GenAI Summit 2024, and HYSTA 2024, fostering dialogue on emerging technologies and entrepreneurship.",
+                    images: ["./assets/summit1.JPG", "./assets/summit2.JPG"]
+                  },
+                  { 
+                    title: "Founder Talks", 
+                    desc: "Through interviews, roundtables, and site visits, we share the stories of entrepreneurs and investors. This initiative provides students with a gateway to connect with the venture ecosystem.",
+                    images: ["./assets/talk1.jpg", "./assets/talk2.JPG"]
+                  },
+                ].map((event) => (
+                  <div key={event.title} className="rounded-2xl border border-gray-800 bg-gray-900 p-6 shadow-sm">
+                    <h3 className="font-semibold text-white">{event.title}</h3>
+                    <p className="mt-2 text-sm text-gray-300">{event.desc}</p>
+                    <div className="mt-4 grid grid-cols-2 gap-3">
+                      {event.images.map((src, idx) => (
+                        <img 
+                          key={idx} 
+                          src={src} 
+                          alt={`${event.title} photo ${idx+1}`} 
+                          className="rounded-lg object-cover w-full h-32 border border-gray-800"
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Section>
 
             <Section id="join" title="Join Us" desc="Fill the form or email us. Volunteers and partners are welcome.">
               <JoinForm />
@@ -642,7 +642,7 @@
               <div className="rounded-2xl border border-gray-800 bg-gray-900 p-6 shadow-sm reveal">
                 <div className="grid md:grid-cols-2 gap-6 items-center">
                   <div>
-                    <p className="text-sm text-gray-300">Email: <a className="underline text-violet-400 hover:text-violet-300" href={`mailto:${CLUB.email}`}>{CLUB.email}</a></p>
+                    <p className="text-sm text-gray-300">Email: <a className="underline text-blue-500 hover:text-blue-400" href={`mailto:${CLUB.email}`}>{CLUB.email}</a></p>
                     <p className="text-sm text-gray-300 mt-1">Location: {CLUB.location}</p>
                     <div className="mt-3 flex flex-wrap gap-3 text-sm">
                       <a className="rounded-full border border-gray-700 px-3 py-1 hover:bg-gray-800 text-gray-200" href={CLUB.socials.wechat}>WeChat</a>
